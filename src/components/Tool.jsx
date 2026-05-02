@@ -1,165 +1,176 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import styles from './Tool.module.css'
 
 const STEPS = [
-  { id: 'token',   label: 'Token data fetched',       desc: 'Name, ticker, logo, supply' },
-  { id: 'group',   label: 'Telegram group created',   desc: 'Name, description, profile picture set' },
-  { id: 'gate',    label: 'Verification gate active', desc: 'Safeguard configured and live' },
-  { id: 'bots',    label: 'Mod bots installed',       desc: 'Anti-spam, anti-raid, pinned announcements' },
-  { id: 'welcome', label: 'Welcome message set',      desc: 'Auto-filled with token info and links' },
-  { id: 'network', label: 'Engagement network ready', desc: 'Bot community active and live' },
+  'Fetching token data...',
+  'Token data fetched',
+  'Creating Telegram group...',
+  'Telegram group created',
+  'Configuring verification gate...',
+  'Safeguard gate active',
+  'Installing mod bots...',
+  'Mod bots installed',
+  'Writing welcome message...',
+  'Welcome message set',
+  'Activating engagement network...',
+  'Engagement network ready',
 ]
 
+function timestamp() {
+  return new Date().toLocaleTimeString('en-GB', { hour12: false })
+}
+
 export default function Tool() {
-  const [ca, setCa] = useState('')
-  const [status, setStatus] = useState('idle') // idle | loading | done
-  const [completedSteps, setCompletedSteps] = useState([])
-  const [groupLink, setGroupLink] = useState('')
+  const [ca, setCa]         = useState('')
+  const [chain, setChain]   = useState('Solana')
+  const [gate, setGate]     = useState('Safeguard')
+  const [log, setLog]       = useState([])
+  const [running, setRunning] = useState(false)
+  const [done, setDone]     = useState(false)
+  const [link, setLink]     = useState('')
+  const logRef              = useRef(null)
 
-  function handleLaunch(e) {
+  useEffect(() => {
+    if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight
+  }, [log])
+
+  function addLog(msg, type = 'info') {
+    setLog(prev => [...prev, { msg, type, ts: timestamp() }])
+  }
+
+  async function handleBuild(e) {
     e.preventDefault()
-    if (!ca.trim()) return
-    setStatus('loading')
-    setCompletedSteps([])
-    setGroupLink('')
+    if (!ca.trim() || running) return
+    setLog([])
+    setDone(false)
+    setLink('')
+    setRunning(true)
 
-    STEPS.forEach((step, i) => {
-      setTimeout(() => {
-        setCompletedSteps(prev => [...prev, step.id])
-        if (i === STEPS.length - 1) {
-          setStatus('done')
-          setGroupLink('https://t.me/example_group')
-        }
-      }, (i + 1) * 900)
-    })
+    const delay = ms => new Promise(r => setTimeout(r, ms))
+
+    addLog(`Starting build for ${ca.slice(0, 8)}...${ca.slice(-6)}`, 'muted')
+    await delay(600)
+
+    for (let i = 0; i < STEPS.length; i++) {
+      const isResult = i % 2 === 1
+      await delay(isResult ? 700 : 400)
+      addLog(STEPS[i], isResult ? 'done' : 'pending')
+    }
+
+    await delay(400)
+    const fakeLink = 'https://t.me/candletg_' + ca.slice(-6).toLowerCase()
+    setLink(fakeLink)
+    addLog('Group ready — invite link generated.', 'success')
+    setRunning(false)
+    setDone(true)
   }
 
   function handleReset() {
-    setStatus('idle')
     setCa('')
-    setCompletedSteps([])
-    setGroupLink('')
+    setLog([])
+    setDone(false)
+    setLink('')
   }
 
   return (
-    <div className={styles.page}>
-      <div className={styles.layout}>
+    <div className={styles.wrap}>
+      <div className={styles.card}>
 
-        {/* Left panel — input */}
-        <div className={styles.panel}>
-          <div className={styles.panelHeader}>
-            <span className={styles.panelTitle}>Group Builder</span>
-          </div>
+        {/* Header */}
+        <div className={styles.cardHeader}>
+          <span className={styles.cardLabel}>Group Builder</span>
+          {running && <span className={styles.pill}><span className={styles.dot} />running</span>}
+          {done    && <span className={styles.pillDone}>complete</span>}
+        </div>
 
-          <form className={styles.form} onSubmit={handleLaunch}>
-            <label className={styles.label}>Contract Address</label>
+        {/* Input area */}
+        <div className={styles.body}>
+          <form onSubmit={handleBuild} className={styles.form}>
             <input
-              className={styles.input}
+              className={styles.caInput}
               type="text"
-              placeholder="e.g. 0x1234...abcd"
+              placeholder="Contract address"
               value={ca}
               onChange={e => setCa(e.target.value)}
-              disabled={status === 'loading'}
+              disabled={running}
               spellCheck={false}
+              autoComplete="off"
             />
-
-            <div className={styles.options}>
-              <div className={styles.option}>
-                <span className={styles.optLabel}>Chain</span>
-                <select className={styles.select} disabled={status === 'loading'}>
-                  <option>Solana</option>
-                  <option>Ethereum</option>
-                  <option>Base</option>
-                </select>
-              </div>
-              <div className={styles.option}>
-                <span className={styles.optLabel}>Gate</span>
-                <select className={styles.select} disabled={status === 'loading'}>
-                  <option>Safeguard</option>
-                  <option>Candle Guard</option>
-                </select>
-              </div>
+            <div className={styles.row}>
+              <select
+                className={styles.select}
+                value={chain}
+                onChange={e => setChain(e.target.value)}
+                disabled={running}
+              >
+                <option>Solana</option>
+                <option>Ethereum</option>
+                <option>Base</option>
+              </select>
+              <select
+                className={styles.select}
+                value={gate}
+                onChange={e => setGate(e.target.value)}
+                disabled={running}
+              >
+                <option>Safeguard</option>
+                <option>Candle Guard</option>
+              </select>
+              {!done ? (
+                <button
+                  className={styles.buildBtn}
+                  type="submit"
+                  disabled={!ca.trim() || running}
+                >
+                  {running ? 'Building…' : 'Build group'}
+                </button>
+              ) : (
+                <button
+                  className={styles.resetBtn}
+                  type="button"
+                  onClick={handleReset}
+                >
+                  Reset
+                </button>
+              )}
             </div>
-
-            {status === 'idle' && (
-              <button className={styles.btn} type="submit" disabled={!ca.trim()}>
-                Launch Group
-              </button>
-            )}
-            {status === 'loading' && (
-              <button className={styles.btnDisabled} type="button" disabled>
-                Building...
-              </button>
-            )}
-            {status === 'done' && (
-              <button className={styles.btnReset} type="button" onClick={handleReset}>
-                Build Another
-              </button>
-            )}
           </form>
-
-          <div className={styles.divider} />
-
-          <div className={styles.infoBlock}>
-            <p className={styles.infoTitle}>What gets built</p>
-            <ul className={styles.infoList}>
-              <li>Telegram group with token name & logo</li>
-              <li>Safeguard or Candle Guard verification</li>
-              <li>Mod bots configured</li>
-              <li>Custom welcome message</li>
-              <li>Bot engagement network</li>
-            </ul>
-          </div>
         </div>
 
-        {/* Right panel — status */}
-        <div className={styles.panel}>
-          <div className={styles.panelHeader}>
-            <span className={styles.panelTitle}>Build Status</span>
-            {status === 'loading' && <span className={styles.statusLive}><span className={styles.dot} />RUNNING</span>}
-            {status === 'done'    && <span className={styles.statusDone}>COMPLETE</span>}
-            {status === 'idle'    && <span className={styles.statusIdle}>IDLE</span>}
-          </div>
-
-          <div className={styles.steps}>
-            {STEPS.map(step => {
-              const done = completedSteps.includes(step.id)
-              const active = status === 'loading' && completedSteps.length === STEPS.indexOf(step)
-              return (
-                <div key={step.id} className={`${styles.step} ${done ? styles.stepDone : ''} ${active ? styles.stepActive : ''}`}>
-                  <div className={styles.stepIcon}>
-                    {done ? '✓' : active ? '·' : '○'}
-                  </div>
-                  <div className={styles.stepText}>
-                    <span className={styles.stepLabel}>{step.label}</span>
-                    <span className={styles.stepDesc}>{step.desc}</span>
-                  </div>
+        {/* Log */}
+        {log.length > 0 && (
+          <div className={styles.logWrap}>
+            <div className={styles.logInner} ref={logRef}>
+              {log.map((entry, i) => (
+                <div key={i} className={`${styles.logLine} ${styles[entry.type]}`}>
+                  <span className={styles.ts}>{entry.ts}</span>
+                  <span className={styles.logIcon}>
+                    {entry.type === 'done'    ? '✓' :
+                     entry.type === 'success' ? '✓' :
+                     entry.type === 'pending' ? '·' : ' '}
+                  </span>
+                  <span className={styles.logMsg}>{entry.msg}</span>
                 </div>
-              )
-            })}
+              ))}
+            </div>
           </div>
+        )}
 
-          {status === 'done' && (
-            <div className={styles.result}>
-              <p className={styles.resultLabel}>Your group is live</p>
-              <a className={styles.resultLink} href={groupLink} target="_blank" rel="noreferrer">
-                {groupLink}
-              </a>
+        {/* Result */}
+        {done && link && (
+          <div className={styles.result}>
+            <span className={styles.resultLabel}>Invite link</span>
+            <div className={styles.resultRow}>
+              <span className={styles.resultLink}>{link}</span>
               <button
                 className={styles.copyBtn}
-                onClick={() => navigator.clipboard.writeText(groupLink)}
+                onClick={() => navigator.clipboard.writeText(link)}
               >
-                Copy link
+                Copy
               </button>
             </div>
-          )}
-
-          {status === 'idle' && (
-            <div className={styles.empty}>
-              <p>Paste a contract address and hit Launch to build your group.</p>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
 
       </div>
     </div>

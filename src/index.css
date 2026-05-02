@@ -1,32 +1,30 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg:       #0a0a0a;
-  --card:     #111111;
-  --card2:    #161616;
-  --border:   #1f1f1f;
-  --green:    #00ff88;
-  --green-dim: rgba(0,255,136,0.1);
-  --green-glow: rgba(0,255,136,0.18);
-  --text:     #ffffff;
-  --sub:      #888888;
-  --muted:    #444444;
-  --radius:   12px;
+  --bg:      #0a0a0a;
+  --surface: #111111;
+  --border:  #1a1a1a;
+  --border2: #222222;
+  --green:   #00ff88;
+  --green-bg: rgba(0,255,136,0.06);
+  --text:    #e8e8e8;
+  --sub:     #555555;
+  --muted:   #333333;
+  --mono:    'JetBrains Mono', monospace;
 }
 
-html { scroll-behavior: smooth; }
+html, body { height: 100%; }
 
 body {
   font-family: 'Inter', sans-serif;
   background: var(--bg);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
 }
 
-#root { width: 100%; text-align: left; }
+#root { height: 100%; text-align: left; }
 a { text-decoration: none; color: inherit; }
 button { cursor: pointer; font-family: inherit; border: none; outline: none; }
 input, select { font-family: inherit; }
