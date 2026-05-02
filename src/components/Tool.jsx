@@ -34,6 +34,7 @@ function timeAgo(mins) {
 
 export default function Tool() {
   const [ca, setCa]             = useState('')
+  const [username, setUsername] = useState('')
   const [chain, setChain]       = useState('Solana')
   const [running, setRunning]   = useState(false)
   const [done, setDone]         = useState(false)
@@ -60,28 +61,53 @@ export default function Tool() {
 
   async function handleBuild(e) {
     e.preventDefault()
-    if (!ca.trim() || running) return
+    if (!ca.trim() || !username.trim() || running) return
     setDone(false)
     setProgress(0)
     setLink('')
     setRunning(true)
 
-    for (let i = 1; i <= STEPS.length; i++) {
-      await new Promise(r => setTimeout(r, 700 + Math.random() * 400))
-      setProgress(i)
+    // Animate steps while real API runs
+    let apiDone = false
+    const animateSteps = async () => {
+      for (let i = 1; i <= STEPS.length; i++) {
+        await new Promise(r => setTimeout(r, 900 + Math.random() * 500))
+        if (apiDone) { setProgress(STEPS.length); break }
+        setProgress(i)
+      }
+    }
+    const animPromise = animateSteps()
+
+    try {
+      const res  = await fetch('http://localhost:3001/build', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ ca, chain, username }),
+      })
+      const data = await res.json()
+      apiDone = true
+      await animPromise
+      setProgress(STEPS.length)
+
+      if (data.inviteLink) {
+        setLink(data.inviteLink)
+        setTotalBuilt(n => n + 1)
+        const newEntry = { ca: ca.slice(0,8) + '...' + ca.slice(-4), chain, age: 0 }
+        setActivity(prev => [newEntry, ...prev].slice(0, 5))
+      } else {
+        alert(data.error || 'Something went wrong')
+      }
+    } catch {
+      apiDone = true
+      alert('Could not reach server — make sure the backend is running.')
     }
 
-    const newLink = 'https://t.me/candletg_' + ca.slice(-6).toLowerCase()
-    setLink(newLink)
     setRunning(false)
     setDone(true)
-    setTotalBuilt(n => n + 1)
-    const newEntry = { ca: ca.slice(0,8) + '...' + ca.slice(-4), chain, age: 0 }
-    setActivity(prev => [newEntry, ...prev].slice(0, 5))
   }
 
   function handleReset() {
-    setCa(''); setProgress(0); setDone(false); setLink(''); setCopied(false)
+    setCa(''); setUsername(''); setProgress(0); setDone(false); setLink(''); setCopied(false)
   }
 
   function handleCopy() {
@@ -181,6 +207,18 @@ export default function Tool() {
                 autoComplete="off"
               />
 
+              <label className={styles.fieldLabel} style={{ marginTop: 4 }}>Your Telegram Username</label>
+              <input
+                className={styles.caInput}
+                type="text"
+                placeholder="@yourusername"
+                value={username}
+                onChange={e => setUsername(e.target.value)}
+                disabled={running}
+                spellCheck={false}
+                autoComplete="off"
+              />
+
               <label className={styles.fieldLabel} style={{ marginTop: 4 }}>Chain</label>
               <div className={styles.pillRow}>
                 {CHAINS.map(c => (
@@ -195,7 +233,7 @@ export default function Tool() {
               </div>
 
               {!done ? (
-                <button className={styles.buildBtn} onClick={handleBuild} disabled={!ca.trim() || running}>
+                <button className={styles.buildBtn} onClick={handleBuild} disabled={!ca.trim() || !username.trim() || running}>
                   {running
                     ? <span className={styles.buildingRow}><span className={styles.spinner} />Building…</span>
                     : 'Build my group'}

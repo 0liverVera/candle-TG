@@ -1,171 +1,232 @@
 const express = require('express')
 const axios   = require('axios')
+const { Api } = require('telegram')
 const router  = express.Router()
 
 const BOT_TOKEN = process.env.BOT_TOKEN
-const TG = `https://api.telegram.org/bot${BOT_TOKEN}`
+
+async function getClient() {
+  const { TelegramClient } = require('telegram')
+  const { StringSession }  = require('telegram/sessions')
+  const client = new TelegramClient(
+    new StringSession(process.env.TG_SESSION),
+    parseInt(process.env.TG_API_ID),
+    process.env.TG_API_HASH,
+    { connectionRetries: 3 }
+  )
+  await client.connect()
+  return client
+}
 
 // POST /build  { ca, chain }
-// Full pipeline: fetch token → create group → configure → return invite link
 router.post('/', async (req, res) => {
-  const { ca, chain = 'Solana' } = req.body
+  const { ca, chain = 'Solana', username = '' } = req.body
   if (!ca) return res.status(400).json({ error: 'CA is required' })
 
   const steps = []
   const log   = msg => { steps.push(msg); console.log(msg) }
+  let client  = null
 
   try {
-    // ── Step 1: Fetch token metadata ──────────────────────────────
+    // ── Step 1: Token metadata ────────────────────────────────────
     log('Fetching token data...')
-    let token = { name: 'Unknown', ticker: 'TKN', logo: null, ca }
-
+    let token = { name: 'Token', ticker: 'TKN', logo: null, ca }
     try {
-      const meta = await axios.get(
-        `http://localhost:${process.env.PORT || 3001}/token/${ca}`
-      )
-      token = meta.data
+      const { data } = await axios.get(`http://localhost:${process.env.PORT || 3001}/token/${ca}`)
+      token = data
       log(`Token data fetched — ${token.name} ($${token.ticker})`)
     } catch {
-      log('Token metadata not found — using CA as identifier')
+      log('Token metadata unavailable — using CA identifier')
     }
 
-    // ── Steps 2–9: Telegram group creation ───────────────────────
-    // Requires GramJS user session (TG_API_ID + TG_API_HASH + TG_SESSION)
-    // Bot API alone cannot create groups — this is a Telegram platform limitation
-    if (!process.env.TG_API_ID || !process.env.TG_API_HASH || !process.env.TG_SESSION) {
-      log('Telegram group creation — awaiting credentials (TG_API_ID, TG_API_HASH, TG_SESSION)')
-      return res.status(202).json({
-        status: 'partial',
-        message: 'Token metadata works. Group creation needs TG_API_ID + TG_API_HASH + TG_SESSION.',
-        token,
-        steps,
-        needsSetup: ['TG_API_ID', 'TG_API_HASH', 'TG_SESSION'],
-      })
-    }
-
-    // ── Full flow (runs once GramJS creds are configured) ────────
-    const { TelegramClient } = require('telegram')
-    const { StringSession }  = require('telegram/sessions')
-
-    const client = new TelegramClient(
-      new StringSession(process.env.TG_SESSION),
-      parseInt(process.env.TG_API_ID),
-      process.env.TG_API_HASH,
-      { connectionRetries: 3 }
-    )
-    await client.connect()
+    // ── Step 2: Connect & create supergroup ───────────────────────
+    client = await getClient()
     log('Connected to Telegram')
 
-    // Create group
     log('Creating Telegram group...')
     const groupName = `${token.name} | $${token.ticker}`
-    const result = await client.invoke(
-      new (require('telegram/tl').Api.messages.CreateChat)({
-        users: [],
-        title: groupName,
+    const createResult = await client.invoke(
+      new Api.channels.CreateChannel({
+        title:      groupName,
+        about:      `${token.name} ($${token.ticker}) — Official Community\nCA: ${ca}`,
+        megagroup:  true,
+        broadcast:  false,
       })
     )
-    const chatId = result.chats[0].id
+    const channel = createResult.chats[0]
+    const peer    = new Api.InputChannel({
+      channelId:  channel.id,
+      accessHash: channel.accessHash,
+    })
     log('Telegram group created')
 
-    // Set description
-    log('Setting group description...')
-    await client.invoke(
-      new (require('telegram/tl').Api.messages.EditChatAbout)({
-        peer: chatId,
-        about: `${token.name} ($${token.ticker}) — Official Community\nCA: ${ca}`,
-      })
-    )
-
-    // Upload logo as group photo if available
+    // ── Step 3: Upload token logo as group photo ──────────────────
     if (token.logo) {
       try {
-        log('Uploading token logo...')
-        const imgRes  = await axios.get(token.logo, { responseType: 'arraybuffer' })
-        const file    = await client.uploadFile({
-          file: Buffer.from(imgRes.data),
+        const imgRes = await axios.get(token.logo, { responseType: 'arraybuffer' })
+        const file   = await client.uploadFile({
+          file:    Buffer.from(imgRes.data),
           workers: 1,
         })
         await client.invoke(
-          new (require('telegram/tl').Api.messages.EditChatPhoto)({
-            chatId,
-            photo: new (require('telegram/tl').Api.InputChatUploadedPhoto)({ file }),
+          new Api.channels.EditPhoto({
+            channel: peer,
+            photo:   new Api.InputChatUploadedPhoto({ file }),
           })
         )
         log('Token logo set as group photo')
       } catch {
-        log('Logo upload skipped — image unavailable')
+        log('Logo upload skipped')
       }
     }
 
-    // Add Safeguard bot
-    log('Adding Safeguard verification gate...')
+    // ── Step 4: Add Safeguard bot ─────────────────────────────────
+    log('Configuring Safeguard verification gate...')
     try {
+      const safeguard = await client.getEntity('SafeguardRobot')
       await client.invoke(
-        new (require('telegram/tl').Api.messages.AddChatUser)({
-          chatId,
-          userId: 'SafeguardRobot',
-          fwdLimit: 0,
+        new Api.channels.InviteToChannel({ channel: peer, users: [safeguard] })
+      )
+      await client.invoke(
+        new Api.channels.EditAdmin({
+          channel:  peer,
+          userId:   safeguard,
+          adminRights: new Api.ChatAdminRights({
+            changeInfo:    false,
+            postMessages:  false,
+            editMessages:  false,
+            deleteMessages: true,
+            banUsers:      true,
+            inviteUsers:   true,
+            pinMessages:   false,
+            addAdmins:     false,
+            anonymous:     false,
+            manageCall:    false,
+            other:         true,
+          }),
+          rank: 'Verification',
         })
       )
       log('Safeguard gate active')
-    } catch {
-      log('Safeguard: add manually after group creation')
+    } catch (e) {
+      log('Safeguard: add @SafeguardRobot manually as admin')
+      console.error('Safeguard error:', e.message)
     }
 
-    // Add Rose Bot
-    log('Adding Rose moderation bot...')
+    // ── Step 5: Add Rose Bot ──────────────────────────────────────
+    log('Installing mod bots...')
     try {
+      const rose = await client.getEntity('MissRose_bot')
       await client.invoke(
-        new (require('telegram/tl').Api.messages.AddChatUser)({
-          chatId,
-          userId: 'MissRose_bot',
-          fwdLimit: 0,
+        new Api.channels.InviteToChannel({ channel: peer, users: [rose] })
+      )
+      await client.invoke(
+        new Api.channels.EditAdmin({
+          channel:  peer,
+          userId:   rose,
+          adminRights: new Api.ChatAdminRights({
+            changeInfo:    false,
+            postMessages:  false,
+            editMessages:  false,
+            deleteMessages: true,
+            banUsers:      true,
+            inviteUsers:   true,
+            pinMessages:   true,
+            addAdmins:     false,
+            anonymous:     false,
+            manageCall:    false,
+            other:         true,
+          }),
+          rank: 'Moderator',
         })
       )
       log('Mod bots installed')
-    } catch {
-      log('Rose Bot: add manually after group creation')
+    } catch (e) {
+      log('Rose Bot: add @MissRose_bot manually as admin')
+      console.error('Rose Bot error:', e.message)
     }
 
-    // Set pinned welcome message via bot
+    // ── Step 6: Pin welcome message ───────────────────────────────
     log('Setting welcome message...')
     const welcomeText =
-      `👋 Welcome to ${token.name} ($${token.ticker})!\n\n` +
+      `👋 *Welcome to ${token.name} \\($${token.ticker}\\)\\!*\n\n` +
       `📋 CA: \`${ca}\`\n` +
       `🌐 Website: coming soon\n` +
       `🐦 Twitter: coming soon\n` +
       `📈 Chart: coming soon\n\n` +
-      `✅ Please verify with Safeguard to chat.`
+      `✅ Verify with Safeguard to chat\\.`
 
-    const sent = await client.sendMessage(chatId, { message: welcomeText, parseMode: 'md' })
+    const sent = await client.sendMessage(peer, {
+      message:   welcomeText,
+      parseMode: 'md',
+    })
     await client.invoke(
-      new (require('telegram/tl').Api.messages.UpdatePinnedMessage)({
-        peer: chatId,
-        id: sent.id,
+      new Api.messages.UpdatePinnedMessage({
+        peer:   peer,
+        id:     sent.id,
+        silent: true,
       })
     )
     log('Welcome message set')
 
-    // Generate invite link
+    // ── Step 7: Add user as full admin ───────────────────────────
+    if (username) {
+      log('Adding you as group admin...')
+      try {
+        const userEntity = await client.getEntity(username.replace('@', ''))
+        await client.invoke(
+          new Api.channels.InviteToChannel({ channel: peer, users: [userEntity] })
+        )
+        await client.invoke(
+          new Api.channels.EditAdmin({
+            channel: peer,
+            userId:  userEntity,
+            adminRights: new Api.ChatAdminRights({
+              changeInfo:     true,
+              postMessages:   true,
+              editMessages:   true,
+              deleteMessages: true,
+              banUsers:       true,
+              inviteUsers:    true,
+              pinMessages:    true,
+              addAdmins:      true,
+              anonymous:      false,
+              manageCall:     true,
+              other:          true,
+            }),
+            rank: 'Founder',
+          })
+        )
+        log('You have been added as admin')
+      } catch (e) {
+        log(`Could not add ${username} — join via invite link and promote yourself`)
+        console.error('Add user error:', e.message)
+      }
+    }
+
+    // ── Step 8: Export invite link ────────────────────────────────
     log('Generating invite link...')
     const inviteResult = await client.invoke(
-      new (require('telegram/tl').Api.messages.ExportChatInvite)({ peer: chatId })
+      new Api.messages.ExportChatInvite({ peer })
     )
-    const inviteLink = inviteResult.link
+
+    // ── Step 9: Leave the group ───────────────────────────────────
+    log('Finalising — removing setup account...')
+    await client.invoke(new Api.channels.LeaveChannel({ channel: peer }))
     log('Engagement network ready')
 
     await client.disconnect()
 
     return res.json({
-      status: 'success',
+      status:     'success',
       token,
-      inviteLink,
+      inviteLink: inviteResult.link,
       steps,
     })
 
   } catch (err) {
     console.error('Build error:', err.message)
+    if (client) await client.disconnect().catch(() => {})
     res.status(500).json({ error: err.message, steps })
   }
 })
