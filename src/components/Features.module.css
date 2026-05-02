@@ -1,86 +1,73 @@
 .section {
-  padding: 100px 24px;
+  padding: 80px 28px;
+  border-top: 1px solid var(--border);
 }
 
 .inner {
   max-width: 1100px;
   margin: 0 auto;
-}
-
-.header {
-  text-align: center;
-  margin-bottom: 64px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 40px;
+  text-align: center;
 }
 
 .label {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
-  color: var(--accent);
-  letter-spacing: 1.5px;
+  color: var(--green);
   text-transform: uppercase;
+  letter-spacing: 1.5px;
 }
 
 .title {
-  font-size: clamp(28px, 4vw, 42px);
+  font-size: clamp(22px, 3.5vw, 34px);
   font-weight: 800;
-  letter-spacing: -1px;
-  line-height: 1.15;
+  letter-spacing: -0.8px;
   color: var(--text);
-}
-
-.sub {
-  font-size: 16px;
-  color: var(--text-sub);
-  max-width: 480px;
+  max-width: 500px;
+  line-height: 1.2;
 }
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  width: 100%;
 }
 
 .card {
-  background: var(--bg-card);
+  background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 28px;
+  padding: 24px 20px;
+  text-align: left;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   transition: border-color 0.2s, transform 0.2s;
 }
 
 .card:hover {
-  border-color: rgba(249,115,22,0.3);
-  transform: translateY(-3px);
+  border-color: rgba(0,255,136,0.2);
+  transform: translateY(-2px);
 }
 
-.icon {
-  font-size: 28px;
-  line-height: 1;
-}
+.icon { font-size: 22px; line-height: 1; }
 
 .cardTitle {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--text);
+  margin-bottom: 5px;
 }
 
 .cardDesc {
-  font-size: 14px;
-  line-height: 1.65;
-  color: var(--text-sub);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--sub);
 }
 
-@media (max-width: 900px) {
-  .grid { grid-template-columns: repeat(2, 1fr); }
-}
-
-@media (max-width: 560px) {
-  .grid { grid-template-columns: 1fr; }
-}
+@media (max-width: 900px) { .grid { grid-template-columns: repeat(2,1fr); } }
+@media (max-width: 500px) { .grid { grid-template-columns: 1fr; } }
