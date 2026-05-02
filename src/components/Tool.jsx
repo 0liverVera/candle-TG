@@ -5,10 +5,10 @@ const CHAINS = ['Solana', 'Ethereum', 'Base']
 
 const STEPS = [
   'Token data fetched',
-  'Telegram group created',
-  'Safeguard gate active',
-  'Mod bots installed',
-  'Welcome message set',
+  'Community group created',
+  'Safeguard gate configured',
+  'Rose Bot installed',
+  'Announcement channel created',
   'Engagement network ready',
 ]
 
