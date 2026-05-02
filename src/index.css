@@ -9,7 +9,7 @@
   --border-in: rgba(255,255,255,0.05);
   --green:     #00ff88;
   --green-glow: rgba(0,255,136,0.06);
-  --green-dim:  rgba(0,255,136,0.12);
+  --green-dim:  rgba(0,255,136,0.1);
   --green-focus: rgba(0,255,136,0.22);
   --text:      #f0f0f0;
   --sub:       #6a6a6a;
@@ -21,12 +21,14 @@ html, body { height: 100%; }
 
 body {
   font-family: 'Inter', sans-serif;
-  background: var(--bg);
+  background-color: var(--bg);
+  background-image: radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 28px 28px;
   color: var(--text);
   -webkit-font-smoothing: antialiased;
 }
 
-#root { height: 100%; }
+#root { min-height: 100%; display: flex; flex-direction: column; }
 a { text-decoration: none; color: inherit; }
 button { cursor: pointer; font-family: inherit; border: none; outline: none; }
 input, select { font-family: inherit; }

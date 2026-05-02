@@ -1,10 +1,10 @@
-/* ── Page shell ── */
+/* ── Page ── */
 .page {
-  min-height: 100vh;
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 60px 32px;
+  padding: 48px 32px;
   position: relative;
   overflow: hidden;
 }
@@ -16,11 +16,11 @@
   transform: translate(-50%, -50%);
   width: 900px;
   height: 900px;
-  background: radial-gradient(ellipse at center, rgba(0,255,136,0.04) 0%, transparent 60%);
+  background: radial-gradient(ellipse at center, rgba(0,255,136,0.05) 0%, transparent 60%);
   pointer-events: none;
 }
 
-/* ── Two-column layout ── */
+/* ── Layout ── */
 .layout {
   position: relative;
   z-index: 1;
@@ -38,7 +38,7 @@
   padding-right: 64px;
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 32px;
 }
 
 .eyebrow {
@@ -50,7 +50,7 @@
 }
 
 .headline {
-  font-size: clamp(28px, 3.2vw, 40px);
+  font-size: clamp(28px, 3vw, 38px);
   font-weight: 800;
   line-height: 1.15;
   letter-spacing: -1px;
@@ -60,15 +60,13 @@
 .body {
   font-size: 14px;
   line-height: 1.75;
-  color: #666;
-  max-width: 380px;
+  color: #5a5a5a;
 }
 
-/* Stat rows */
+/* Stats */
 .stats {
   display: flex;
   flex-direction: column;
-  margin-top: 4px;
 }
 
 .statDivider {
@@ -80,19 +78,100 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 0;
+  padding: 13px 0;
 }
 
 .statValue {
   font-size: 14px;
   font-weight: 700;
   color: var(--text);
-  letter-spacing: -0.2px;
+  letter-spacing: -0.3px;
 }
 
 .statLabel {
-  font-size: 13px;
+  font-size: 12px;
   color: #555;
+}
+
+/* Activity feed */
+.feed {
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.015);
+}
+
+.feedHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.feedTitle {
+  font-size: 11px;
+  font-weight: 600;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.feedCount {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--green);
+}
+
+.feedRows {
+  display: flex;
+  flex-direction: column;
+}
+
+.feedRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: background 0.15s;
+}
+
+.feedRow:last-child { border-bottom: none; }
+.feedRow:hover { background: rgba(255,255,255,0.02); }
+
+.feedDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.feedCa {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: #666;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.feedChain {
+  font-size: 11px;
+  font-weight: 600;
+  color: #444;
+  flex-shrink: 0;
+  width: 60px;
+}
+
+.feedAge {
+  font-size: 11px;
+  color: #333;
+  flex-shrink: 0;
+  text-align: right;
+  min-width: 46px;
 }
 
 /* ── Column divider ── */
@@ -127,7 +206,6 @@
     0 24px 64px rgba(0,0,0,0.6);
 }
 
-/* ── Card header ── */
 .cardTop {
   display: flex;
   align-items: center;
@@ -187,7 +265,6 @@
   color: #888;
   font-weight: 500;
   margin-top: -8px;
-  flex-wrap: wrap;
 }
 
 .sepDot {
@@ -205,7 +282,7 @@
   margin: 0 -28px;
 }
 
-/* ── Input section ── */
+/* Input */
 .inputSection {
   display: flex;
   flex-direction: column;
@@ -242,7 +319,6 @@
 .caInput::placeholder { color: #444; }
 .caInput:disabled     { opacity: 0.45; }
 
-/* Chain pills */
 .pillRow {
   display: flex;
   gap: 6px;
@@ -260,10 +336,7 @@
   transition: border-color 0.15s, color 0.15s, background 0.15s;
 }
 
-.pill:hover:not(:disabled) {
-  border-color: #3a3a3a;
-  color: #aaa;
-}
+.pill:hover:not(:disabled) { border-color: #3a3a3a; color: #aaa; }
 
 .pillActive {
   border-color: rgba(0,255,136,0.4) !important;
@@ -273,7 +346,6 @@
 
 .pill:disabled { opacity: 0.45; cursor: default; }
 
-/* Build button */
 .buildBtn {
   width: 100%;
   height: 46px;
@@ -282,7 +354,6 @@
   font-size: 14px;
   font-weight: 700;
   border-radius: 8px;
-  letter-spacing: 0.1px;
   margin-top: 2px;
   box-shadow: 0 4px 20px rgba(0,255,136,0.3);
   transition: filter 0.15s, transform 0.15s, box-shadow 0.15s;
@@ -295,12 +366,7 @@
 }
 
 .buildBtn:active:not(:disabled) { transform: translateY(0); }
-
-.buildBtn:disabled {
-  opacity: 0.3;
-  cursor: default;
-  box-shadow: none;
-}
+.buildBtn:disabled { opacity: 0.3; cursor: default; box-shadow: none; }
 
 .buildingRow {
   display: flex;
@@ -333,12 +399,9 @@
   transition: border-color 0.15s, color 0.15s;
 }
 
-.resetBtn:hover {
-  border-color: rgba(255,255,255,0.2);
-  color: var(--text);
-}
+.resetBtn:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
 
-/* ── Checklist ── */
+/* Checklist */
 .checklist {
   display: flex;
   flex-direction: column;
@@ -388,12 +451,7 @@
   50%      { opacity: 0.35; }
 }
 
-.check {
-  font-size: 10px;
-  color: var(--green);
-  font-weight: 700;
-  line-height: 1;
-}
+.check { font-size: 10px; color: var(--green); font-weight: 700; line-height: 1; }
 
 .stepLabel {
   font-family: var(--mono);
@@ -405,12 +463,8 @@
 .stepDone .stepLabel   { color: #ccc; }
 .stepActive .stepLabel { color: #666; }
 
-/* ── Result ── */
-.result {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
+/* Result */
+.result { display: flex; flex-direction: column; gap: 10px; }
 
 .resultRow {
   display: flex;
@@ -442,33 +496,15 @@
   padding: 5px 12px;
   border-radius: 6px;
   transition: background 0.15s;
-  letter-spacing: 0.3px;
 }
 
 .copyBtn:hover { background: rgba(0,255,136,0.1); }
 
 /* ── Responsive ── */
 @media (max-width: 860px) {
-  .layout {
-    flex-direction: column;
-    gap: 48px;
-  }
-  .left {
-    width: 100%;
-    padding-right: 0;
-    gap: 20px;
-  }
-  .colDivider {
-    width: 100%;
-    height: 1px;
-    align-self: auto;
-  }
-  .right {
-    width: 100%;
-    padding-left: 0;
-    justify-content: center;
-  }
+  .layout { flex-direction: column; gap: 40px; }
+  .left { width: 100%; padding-right: 0; }
+  .colDivider { width: 100%; height: 1px; align-self: auto; }
+  .right { width: 100%; padding-left: 0; justify-content: center; }
   .card { max-width: 100%; }
-  .divider { margin: 0 -28px; }
-  .checklist { margin: 0 -28px; }
 }
