@@ -1,18 +1,20 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg:      #0a0a0a;
-  --surface: #111111;
-  --border:  #1a1a1a;
-  --border2: #222222;
-  --green:   #00ff88;
-  --green-bg: rgba(0,255,136,0.06);
-  --text:    #e8e8e8;
-  --sub:     #555555;
-  --muted:   #333333;
-  --mono:    'JetBrains Mono', monospace;
+  --bg:        #0a0a0a;
+  --surface:   #111111;
+  --border:    rgba(255,255,255,0.08);
+  --border-in: rgba(255,255,255,0.05);
+  --green:     #00ff88;
+  --green-glow: rgba(0,255,136,0.06);
+  --green-dim:  rgba(0,255,136,0.12);
+  --green-focus: rgba(0,255,136,0.22);
+  --text:      #f0f0f0;
+  --sub:       #6a6a6a;
+  --muted:     #2e2e2e;
+  --mono:      'JetBrains Mono', monospace;
 }
 
 html, body { height: 100%; }
@@ -24,7 +26,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-#root { height: 100%; text-align: left; }
+#root { height: 100%; }
 a { text-decoration: none; color: inherit; }
 button { cursor: pointer; font-family: inherit; border: none; outline: none; }
 input, select { font-family: inherit; }
