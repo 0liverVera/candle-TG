@@ -4,18 +4,19 @@ import styles from './Tool.module.css'
 const CHAINS = ['Solana', 'Ethereum', 'Base']
 
 const STEPS = [
-  'Token data fetched',
+  'Token metadata fetched',
   'Community group created',
   'Safeguard gate configured',
   'Rose Bot installed',
-  'Announcement channel created',
-  'Engagement network ready',
+  'Verify channel created',
+  'Safeguard portal live',
+  'Community ready',
 ]
 
 const STATS = [
-  { value: '< 60s',    label: 'Average build time' },
+  { value: '< 90s',    label: 'Average build time' },
   { value: '3 Chains', label: 'Solana · Ethereum · Base' },
-  { value: '6 Steps',  label: 'Fully automated setup' },
+  { value: '7 Steps',  label: 'Fully automated setup' },
 ]
 
 const SEED_ACTIVITY = [
@@ -33,18 +34,19 @@ function timeAgo(mins) {
 }
 
 export default function Tool() {
-  const [ca, setCa]             = useState('')
-  const [username, setUsername] = useState('')
-  const [chain, setChain]       = useState('Solana')
-  const [running, setRunning]   = useState(false)
-  const [done, setDone]         = useState(false)
-  const [progress, setProgress] = useState(0)
-  const [link, setLink]         = useState('')
-  const [copied, setCopied]     = useState(false)
-  const [activity, setActivity] = useState(SEED_ACTIVITY)
+  const [ca, setCa]               = useState('')
+  const [username, setUsername]   = useState('')
+  const [chain, setChain]         = useState('Solana')
+  const [running, setRunning]     = useState(false)
+  const [done, setDone]           = useState(false)
+  const [progress, setProgress]   = useState(0)
+  const [link, setLink]           = useState('')
+  const [tokenInfo, setTokenInfo] = useState(null)
+  const [copied, setCopied]       = useState(false)
+  const [error, setError]         = useState('')
+  const [activity, setActivity]   = useState(SEED_ACTIVITY)
   const [totalBuilt, setTotalBuilt] = useState(1847)
 
-  // Simulate new activity occasionally
   useEffect(() => {
     const chains = ['Solana', 'Ethereum', 'Base']
     const interval = setInterval(() => {
@@ -65,13 +67,14 @@ export default function Tool() {
     setDone(false)
     setProgress(0)
     setLink('')
+    setTokenInfo(null)
+    setError('')
     setRunning(true)
 
-    // Animate steps while real API runs
     let apiDone = false
     const animateSteps = async () => {
       for (let i = 1; i <= STEPS.length; i++) {
-        await new Promise(r => setTimeout(r, 900 + Math.random() * 500))
+        await new Promise(r => setTimeout(r, 1200 + Math.random() * 600))
         if (apiDone) { setProgress(STEPS.length); break }
         setProgress(i)
       }
@@ -91,15 +94,16 @@ export default function Tool() {
 
       if (data.inviteLink) {
         setLink(data.inviteLink)
+        setTokenInfo(data.token || null)
         setTotalBuilt(n => n + 1)
         const newEntry = { ca: ca.slice(0,8) + '...' + ca.slice(-4), chain, age: 0 }
         setActivity(prev => [newEntry, ...prev].slice(0, 5))
       } else {
-        alert(data.error || 'Something went wrong')
+        setError(data.error || 'Something went wrong. Please try again.')
       }
     } catch {
       apiDone = true
-      alert('Could not reach server — make sure the backend is running.')
+      setError('Could not reach server — make sure the backend is running.')
     }
 
     setRunning(false)
@@ -107,7 +111,8 @@ export default function Tool() {
   }
 
   function handleReset() {
-    setCa(''); setUsername(''); setProgress(0); setDone(false); setLink(''); setCopied(false)
+    setCa(''); setUsername(''); setProgress(0); setDone(false)
+    setLink(''); setTokenInfo(null); setCopied(false); setError('')
   }
 
   function handleCopy() {
@@ -150,7 +155,6 @@ export default function Tool() {
             ))}
           </div>
 
-          {/* Live activity feed */}
           <div className={styles.feed}>
             <div className={styles.feedHeader}>
               <span className={styles.feedTitle}>Recent launches</span>
@@ -172,7 +176,7 @@ export default function Tool() {
         {/* ── DIVIDER ── */}
         <div className={styles.colDivider} />
 
-        {/* ── RIGHT — tool card ── */}
+        {/* ── RIGHT ── */}
         <div className={styles.right}>
           <div className={styles.card}>
 
@@ -239,8 +243,10 @@ export default function Tool() {
                     : 'Build my group'}
                 </button>
               ) : (
-                <button className={styles.resetBtn} onClick={handleReset}>Start over</button>
+                <button className={styles.resetBtn} onClick={handleReset}>Build another</button>
               )}
+
+              {error && <p className={styles.errorMsg}>{error}</p>}
             </div>
 
             <div className={styles.divider} />
@@ -267,9 +273,22 @@ export default function Tool() {
               <>
                 <div className={styles.divider} />
                 <div className={styles.result}>
-                  <span className={styles.fieldLabel}>Invite link</span>
+                  <div className={styles.resultHeader}>
+                    <span className={styles.fieldLabel}>Community live</span>
+                    {tokenInfo && (
+                      <span className={styles.resultToken}>
+                        {tokenInfo.name} <span className={styles.resultTicker}>${tokenInfo.ticker}</span>
+                      </span>
+                    )}
+                  </div>
                   <div className={styles.resultRow}>
                     <span className={styles.resultLink}>{link}</span>
+                    <a
+                      href={link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.openBtn}
+                    >Open</a>
                     <button className={styles.copyBtn} onClick={handleCopy}>
                       {copied ? 'Copied!' : 'Copy'}
                     </button>
